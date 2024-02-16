@@ -3,38 +3,29 @@ package hunter
 import (
 	"testdoubles/internal/positioner"
 	"testdoubles/internal/prey"
+
+	"github.com/stretchr/testify/mock"
 )
 
 // NewHunter return a mock implementation of Hunter
 func NewHunterMock() *HunterMock {
-	return &HunterMock{
-		HuntFunc: func(pr prey.Prey) (duration float64, err error) {return},
-		ConfigureFunc: func(speed float64, position *positioner.Position) {},
-	}
+	return &HunterMock{}
 }
 
 // Hunter is a mock implementation of Hunter
 type HunterMock struct {
-	HuntFunc func(pr prey.Prey) (duration float64, err error)
-	ConfigureFunc func(speed float64, position *positioner.Position)
-	// observers
-	Calls struct {
-		Hunt int
-		Configure int
-	}
+	mock.Mock
 }
 
 func (ht *HunterMock) Hunt(pr prey.Prey) (duration float64, err error) {
 	// observers
-	ht.Calls.Hunt++
+	args := ht.Called(pr)
 
-	duration, err = ht.HuntFunc(pr)
+	duration, err = args.Get(0).(float64), args.Error(1)
 	return
 }
 
 func (ht *HunterMock) Configure(speed float64, position *positioner.Position) {
 	// observers
-	ht.Calls.Configure++
-
-	ht.ConfigureFunc(speed, position)
+	ht.Called(speed, position)
 }

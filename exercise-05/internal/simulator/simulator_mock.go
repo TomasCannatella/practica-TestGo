@@ -1,5 +1,7 @@
 package simulator
 
+import "github.com/stretchr/testify/mock"
+
 // NewCatchSimulatorMock creates a new CatchSimulatorMock
 func NewCatchSimulatorMock() (simulator *CatchSimulatorMock) {
 	simulator = &CatchSimulatorMock{}
@@ -8,20 +10,17 @@ func NewCatchSimulatorMock() (simulator *CatchSimulatorMock) {
 
 // CatchSimulatorMock is a mock for CatchSimulator
 type CatchSimulatorMock struct {
-	// CanCatchFunc externalize the CanCatch method
-	CanCatchFunc func(hunter, prey *Subject) (duration float64, ok bool)
-
-	// Observer
-	Calls struct {
-		// CanCatch is the number of times the CanCatch method has been called
-		CanCatch int
-	}
+	// mock.Mock is the mock
+	mock.Mock
 }
 
 // CanCatch
 func (m *CatchSimulatorMock) CanCatch(hunter, prey *Subject) (duration float64, ok bool) {
-	// Update the observer
-	m.Calls.CanCatch++
-	
-	return m.CanCatchFunc(hunter, prey)
+	// args is the arguments for the mock
+	args := m.Called(hunter, prey)
+
+	// return the values from the mock
+	duration = args.Get(0).(float64)
+	ok = args.Bool(1)
+	return
 }

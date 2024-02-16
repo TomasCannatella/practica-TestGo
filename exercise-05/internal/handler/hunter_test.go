@@ -17,8 +17,10 @@ import (
 func TestHunter_ConfigurePrey(t *testing.T) {
 	t.Run("case 01 - prey is configured successfully", func(t *testing.T) {
 		// arrange
+
 		// hunter
 		ht := hunter.NewHunterMock()
+
 		// prey
 		pr := prey.NewPreyStub()
 
@@ -41,6 +43,7 @@ func TestHunter_ConfigurePrey(t *testing.T) {
 
 		require.Equal(t, expectedStatus, res.Code)
 		require.JSONEq(t, expectedBody, res.Body.String())
+		ht.AssertNumberOfCalls(t, "Configure", 0)
 	})
 }
 
@@ -49,8 +52,10 @@ func TestHunter_ConfigureHunter(t *testing.T) {
 		// arrange
 		// hunter
 		ht := hunter.NewHunterMock()
+
 		// prey
 		pr := prey.NewPreyStub()
+
 		// handler
 		hd := handler.NewHunter(ht, pr)
 
@@ -70,18 +75,24 @@ func TestHunter_ConfigureHunter(t *testing.T) {
 
 		require.Equal(t, expectedCode, res.Code)
 		require.JSONEq(t, expectedBody, res.Body.String())
+		ht.AssertNumberOfCalls(t, "Configure", 0)
 	})
 }
 
 func TestHunter_Hunt(t *testing.T) {
 	t.Run("case 01 - hunter hunts the prey successfully", func(t *testing.T) {
 		// arrange
-		// hunter
-		ht := hunter.NewHunterMock()
+
 		// prey
 		pr := prey.NewPreyStub()
+
+		// hunter
+		ht := hunter.NewHunterMock()
+		ht.On("Hunt", pr).Return(0.0, nil)
+
 		// handler
 		hd := handler.NewHunter(ht, pr)
+
 		r := chi.NewRouter()
 		r.Post("/hunt", hd.Hunt())
 
@@ -97,20 +108,23 @@ func TestHunter_Hunt(t *testing.T) {
 
 		require.Equal(t, expectedCode, res.Code)
 		require.JSONEq(t, expectedBody, res.Body.String())
-
+		ht.AssertExpectations(t)
+		ht.AssertNumberOfCalls(t, "Hunt", 1)
 	})
 
 	t.Run("case 02 - hunter can not hunt the prey", func(t *testing.T) {
 		// arrange
-		// hunter
-		ht := hunter.NewHunterMock()
-		ht.HuntFunc = func(p prey.Prey) (float64, error) {
-			return 0.0, hunter.ErrCanNotHunt
-		}
+
 		// prey
 		pr := prey.NewPreyStub()
+
+		// hunter
+		ht := hunter.NewHunterMock()
+		ht.On("Hunt", pr).Return(0.0, hunter.ErrCanNotHunt)
+
 		// handler
 		hd := handler.NewHunter(ht, pr)
+
 		r := chi.NewRouter()
 		r.Post("/hunt", hd.Hunt())
 
@@ -126,17 +140,20 @@ func TestHunter_Hunt(t *testing.T) {
 
 		require.Equal(t, expectedCode, res.Code)
 		require.JSONEq(t, expectedBody, res.Body.String())
+		ht.AssertExpectations(t)
+		ht.AssertNumberOfCalls(t, "Hunt", 1)
 	})
 
 	t.Run("case 03 - internal server error", func(t *testing.T) {
 		// arrange
-		// hunter
-		ht := hunter.NewHunterMock()
-		ht.HuntFunc = func(p prey.Prey) (float64, error) {
-			return 0.0, errors.New("unknown error")
-		}
+
 		// prey
 		pr := prey.NewPreyStub()
+
+		// hunter
+		ht := hunter.NewHunterMock()
+		ht.On("Hunt", pr).Return(0.0, errors.New("internal server error"))
+
 		// handler
 		hd := handler.NewHunter(ht, pr)
 		r := chi.NewRouter()
@@ -154,5 +171,7 @@ func TestHunter_Hunt(t *testing.T) {
 
 		require.Equal(t, expectedCode, res.Code)
 		require.JSONEq(t, expectedBody, res.Body.String())
+		ht.AssertExpectations(t)
+		ht.AssertNumberOfCalls(t, "Hunt", 1)
 	})
 }

@@ -7,6 +7,7 @@ import (
 	"testdoubles/internal/simulator"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,11 +23,11 @@ func TestHunterWhiteShark_Hunt(t *testing.T) {
 		pr.GetSpeedFunc = func() (speed float64) {
 			return 5
 		}
+
 		// - simulator: mock
 		sm := simulator.NewCatchSimulatorMock()
-		sm.CanCatchFunc = func(hunter, prey *simulator.Subject) (duration float64, ok bool) {
-			return 20.0, true
-		}
+		sm.On("CanCatch", mock.Anything, mock.Anything).Return(20.0, true)
+
 		// - hunter: white shark
 		impl := hunter.NewWhiteShark(hunter.ConfigWhiteShark{
 			Speed:     10,
@@ -42,7 +43,7 @@ func TestHunterWhiteShark_Hunt(t *testing.T) {
 		expectedMockCallCanCatch := 1
 		require.NoError(t, err)
 		require.Equal(t, expectedDuration, duration)
-		require.Equal(t, expectedMockCallCanCatch, sm.Calls.CanCatch)
+		sm.AssertNumberOfCalls(t, "CanCatch", expectedMockCallCanCatch)
 	})
 
 	t.Run("white shark can not hunt a prey - has short speed", func(t *testing.T) {
@@ -55,11 +56,11 @@ func TestHunterWhiteShark_Hunt(t *testing.T) {
 		pr.GetSpeedFunc = func() (speed float64) {
 			return 10
 		}
+
 		// - simulator: mock
 		sm := simulator.NewCatchSimulatorMock()
-		sm.CanCatchFunc = func(hunter, prey *simulator.Subject) (duration float64, ok bool) {
-			return 0.0, false
-		}
+		sm.On("CanCatch", mock.Anything, mock.Anything).Return(0.0, false)
+
 		// - hunter: white shark
 		impl := hunter.NewWhiteShark(hunter.ConfigWhiteShark{
 			Speed:     5,
@@ -71,17 +72,19 @@ func TestHunterWhiteShark_Hunt(t *testing.T) {
 		duration, err := impl.Hunt(pr)
 
 		// assert
-		expectedErr := hunter.ErrCanNotHunt; expectedErrMsg := "can not hunt the prey: shark can not catch the prey"
+		expectedErr := hunter.ErrCanNotHunt
+		expectedErrMsg := "can not hunt the prey: shark can not catch the prey"
 		expectedDuration := 0.0
 		expectedMockCallCanCatch := 1
 		require.ErrorIs(t, err, expectedErr)
 		require.EqualError(t, err, expectedErrMsg)
 		require.Equal(t, expectedDuration, duration)
-		require.Equal(t, expectedMockCallCanCatch, sm.Calls.CanCatch)
+		sm.AssertNumberOfCalls(t, "CanCatch", expectedMockCallCanCatch)
 	})
 
 	t.Run("white shark can not hunt a prey - has long distance", func(t *testing.T) {
 		// arrange
+
 		// - prey: stub
 		pr := prey.NewPreyStub()
 		pr.GetPositionFunc = func() (position *positioner.Position) {
@@ -90,11 +93,11 @@ func TestHunterWhiteShark_Hunt(t *testing.T) {
 		pr.GetSpeedFunc = func() (speed float64) {
 			return 5
 		}
+
 		// - simulator: mock
 		sm := simulator.NewCatchSimulatorMock()
-		sm.CanCatchFunc = func(hunter, prey *simulator.Subject) (duration float64, ok bool) {
-			return 0.0, false
-		}
+		sm.On("CanCatch", mock.Anything, mock.Anything).Return(0.0, false)
+
 		// - hunter: white shark
 		impl := hunter.NewWhiteShark(hunter.ConfigWhiteShark{
 			Speed:     10,
@@ -106,13 +109,14 @@ func TestHunterWhiteShark_Hunt(t *testing.T) {
 		duration, err := impl.Hunt(pr)
 
 		// assert
-		expectedErr := hunter.ErrCanNotHunt; expErrMsg := "can not hunt the prey: shark can not catch the prey"
+		expectedErr := hunter.ErrCanNotHunt
+		expErrMsg := "can not hunt the prey: shark can not catch the prey"
 		expectedDuration := 0.0
 		expectedMockCallCanCatch := 1
 		require.ErrorIs(t, err, expectedErr)
 		require.EqualError(t, err, expErrMsg)
 		require.Equal(t, expectedDuration, duration)
-		require.Equal(t, expectedMockCallCanCatch, sm.Calls.CanCatch)
+		sm.AssertNumberOfCalls(t, "CanCatch", expectedMockCallCanCatch)
 	})
 }
 
